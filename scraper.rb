@@ -57,7 +57,7 @@ def scrape_term(id, url)
     if matched = tds[1].text.match(/after (.*)/)
       data[:end_date] = date_from(matched.captures.first)
     end
-    warn data
+    # warn data
 
     if rowspan = tds[1].attr('rowspan')
       # warn "SKIP #{rowspan.to_i - 1}".red
