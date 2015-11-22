@@ -14,6 +14,20 @@ class String
   end
 end
 
+PARTIES = { 
+  "Conservative" => "conservative",
+  "Liberal" => "liberal",
+  "NDP" => "ndp",
+  "Bloc Québécois" => "bloc_québécois",
+  "Green" => "green_party",
+  "FD" => "forces_et_démocratie",
+}
+
+def party_id(str)
+  return if str.to_s.empty?
+  return PARTIES[str] || abort("No such party: #{str}")
+end
+
 def noko_for(url)
   Nokogiri::HTML(open(URI.escape(URI.unescape(url))).read) 
 end
@@ -51,6 +65,8 @@ def scrape_term(id, url)
       term: id,
       source: url,
     }
+    data[:party_id] = party_id(data[:party])
+
     if matched = tds[1].text.match(/until (.*)/)
       data[:start_date] = date_from(matched.captures.first)
     end
