@@ -56,7 +56,7 @@ def scrape_term(id, url)
     district = tds[3].text.tidy if tds[3]
 
     data = { 
-      name: tds[1].css('a').text,
+      name: tds[1].at_css('a').text,
       wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
       party: tds[2].text.tidy,
       state: state,
@@ -73,10 +73,8 @@ def scrape_term(id, url)
     if matched = tds[1].text.match(/after (.*)/)
       data[:end_date] = date_from(matched.captures.first)
     end
-    # warn data
 
     if rowspan = tds[1].attr('rowspan')
-      # warn "SKIP #{rowspan.to_i - 1}".red
       skip = rowspan.to_i - 1
     end
 
