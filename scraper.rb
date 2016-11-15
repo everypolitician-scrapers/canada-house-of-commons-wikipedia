@@ -23,12 +23,10 @@ PARTIES = {
   "Bloc Québécois" => "bloc_québécois",
   "Green" => "green_party",
   "FD" => "forces_et_démocratie",
+  "Independent" => "independent",
+  "Independent Conservative" => "independent_conservative",
+  "Strength in Democracy" => "strength_in_democracy",
 }
-
-def party_id(str)
-  return if str.to_s.empty?
-  return PARTIES[str] || abort("No such party: #{str}")
-end
 
 def noko_for(url)
   Nokogiri::HTML(open(URI.escape(URI.unescape(url))).read)
@@ -57,13 +55,13 @@ def scrape_term(id, url)
       data = {
         name: tds[1].at_css('a').text,
         wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
-        party: tds[2].text.tidy,
+        party: tds[2].children.map(&:text).map(&:tidy).reject(&:empty?).first,
         state: state,
         district: district,
         area: "%s (%s)" % [state, district],
         term: id,
       }
-      data[:party_id] = party_id(data[:party])
+      data[:party_id] = PARTIES[data[:party]] || raise("No such party: #{data[:party]}")
 
       if matched = tds[1].text.match(/until (.*)/)
         data[:start_date] = date_from(matched.captures.first)
