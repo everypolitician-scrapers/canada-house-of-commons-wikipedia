@@ -43,41 +43,43 @@ def scrape_term(id, url)
   district = nil
   skip = 0
 
-  noko.xpath('//table[.//tr[th[.="Electoral district"]]]//tr[td]').each do |tr|
-    unless skip.zero?
-      skip -= 1
-      next
+  noko.xpath('//table[.//tr[th[.="Electoral district"]]]').each do |table|
+    table.xpath('.//tr[td]').each do |tr|
+      unless skip.zero?
+        skip -= 1
+        next
+      end
+
+      tds = tr.css('td')
+      next if tds[1].text == 'Vacant'
+
+      state = tr.xpath('preceding::h3/span[@class="mw-headline"]').last.text
+      district = tds[3].text.tidy if tds[3]
+
+      data = {
+        name: tds[1].at_css('a').text,
+        wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
+        party: tds[2].text.tidy,
+        state: state,
+        district: district,
+        area: "%s (%s)" % [state, district],
+        term: id,
+      }
+      data[:party_id] = party_id(data[:party])
+
+      if matched = tds[1].text.match(/until (.*)/)
+        data[:start_date] = date_from(matched.captures.first)
+      end
+      if matched = tds[1].text.match(/after (.*)/)
+        data[:end_date] = date_from(matched.captures.first)
+      end
+
+      if rowspan = tds[1].attr('rowspan')
+        skip = rowspan.to_i - 1
+      end
+
+      ScraperWiki.save_sqlite([:wikiname, :term], data)
     end
-
-    tds = tr.css('td')
-    next if tds[1].text == 'Vacant'
-
-    state = tr.xpath('preceding::h3/span[@class="mw-headline"]').last.text
-    district = tds[3].text.tidy if tds[3]
-
-    data = {
-      name: tds[1].at_css('a').text,
-      wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
-      party: tds[2].text.tidy,
-      state: state,
-      district: district,
-      area: "%s (%s)" % [state, district],
-      term: id,
-    }
-    data[:party_id] = party_id(data[:party])
-
-    if matched = tds[1].text.match(/until (.*)/)
-      data[:start_date] = date_from(matched.captures.first)
-    end
-    if matched = tds[1].text.match(/after (.*)/)
-      data[:end_date] = date_from(matched.captures.first)
-    end
-
-    if rowspan = tds[1].attr('rowspan')
-      skip = rowspan.to_i - 1
-    end
-
-    ScraperWiki.save_sqlite([:wikiname, :term], data)
   end
 end
 
