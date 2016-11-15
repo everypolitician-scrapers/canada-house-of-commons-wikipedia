@@ -63,7 +63,6 @@ def scrape_term(id, url)
       district: district,
       area: "%s (%s)" % [state, district],
       term: id,
-      source: url,
     }
     data[:party_id] = party_id(data[:party])
 
