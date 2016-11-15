@@ -8,6 +8,8 @@ require 'pry'
 require 'open-uri/cached'
 OpenURI::Cache.cache_path = '.cache'
 
+require_relative 'lib/unspanned_table'
+
 class String
   def tidy
     self.gsub(/[[:space:]]+/, ' ').strip
@@ -37,24 +39,20 @@ def date_from(str)
   Date.parse(str).to_s rescue nil
 end
 
-
 def scrape_term(id, url)
   noko = noko_for(url)
   district = nil
   skip = 0
 
   noko.xpath('//table[.//tr[th[.="Electoral district"]]]').each do |table|
-    table.xpath('.//tr[td]').each do |tr|
-      unless skip.zero?
-        skip -= 1
-        next
-      end
+    unspanned = UnspannedTable.new(table).transformed
 
+    unspanned.xpath('.//tr[td]').each do |tr|
       tds = tr.css('td')
       next if tds[1].text == 'Vacant'
 
-      state = tr.xpath('preceding::h3/span[@class="mw-headline"]').last.text
-      district = tds[3].text.tidy if tds[3]
+      state = table.xpath('preceding::h3/span[@class="mw-headline"]').last.text
+      district = tds[3].text.tidy
 
       data = {
         name: tds[1].at_css('a').text,
@@ -72,10 +70,6 @@ def scrape_term(id, url)
       end
       if matched = tds[1].text.match(/after (.*)/)
         data[:end_date] = date_from(matched.captures.first)
-      end
-
-      if rowspan = tds[1].attr('rowspan')
-        skip = rowspan.to_i - 1
       end
 
       ScraperWiki.save_sqlite([:wikiname, :term], data)
