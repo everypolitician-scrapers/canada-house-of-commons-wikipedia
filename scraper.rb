@@ -14,7 +14,7 @@ class String
   end
 end
 
-PARTIES = { 
+PARTIES = {
   "Conservative" => "conservative",
   "Liberal" => "liberal",
   "NDP" => "ndp",
@@ -29,7 +29,7 @@ def party_id(str)
 end
 
 def noko_for(url)
-  Nokogiri::HTML(open(URI.escape(URI.unescape(url))).read) 
+  Nokogiri::HTML(open(URI.escape(URI.unescape(url))).read)
 end
 
 def date_from(str)
@@ -55,7 +55,7 @@ def scrape_term(id, url)
     state = tr.xpath('preceding::h3/span[@class="mw-headline"]').last.text
     district = tds[3].text.tidy if tds[3]
 
-    data = { 
+    data = {
       name: tds[1].at_css('a').text,
       wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
       party: tds[2].text.tidy,
@@ -82,7 +82,7 @@ def scrape_term(id, url)
   end
 end
 
-terms = { 
+terms = {
   '42' => 'https://en.wikipedia.org/wiki/List_of_House_members_of_the_42nd_Parliament_of_Canada',
   '41' => 'https://en.wikipedia.org/wiki/List_of_House_members_of_the_41st_Parliament_of_Canada',
 }
