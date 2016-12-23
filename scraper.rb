@@ -81,6 +81,7 @@ terms = {
   '41' => 'https://en.wikipedia.org/wiki/List_of_House_members_of_the_41st_Parliament_of_Canada',
 }
 
+ScraperWiki.sqliteexecute('DELETE FROM data') rescue nil
 terms.each do |id, url|
   scrape_term(id, url)
 end
