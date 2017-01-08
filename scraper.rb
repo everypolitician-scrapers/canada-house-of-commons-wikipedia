@@ -40,8 +40,6 @@ end
 
 def scrape_term(id, url)
   noko = noko_for(url)
-  district = nil
-  skip = 0
 
   noko.xpath('//table[.//tr[th[.="Electoral district"]]]').each do |table|
     unspanned = UnspannedTable.new(table).transformed
@@ -72,6 +70,7 @@ def scrape_term(id, url)
         data[:end_date] = date_from(matched.captures.first)
       end
 
+      # puts data
       ScraperWiki.save_sqlite(%i(wikiname term), data)
     end
   end
