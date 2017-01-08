@@ -2,20 +2,14 @@
 # encoding: utf-8
 # frozen_string_literal: true
 
-require 'nokogiri'
 require 'pry'
+require 'scraped'
 require 'scraperwiki'
 
 require 'open-uri/cached'
 OpenURI::Cache.cache_path = '.cache'
 
 require_relative 'lib/unspanned_table'
-
-class String
-  def tidy
-    gsub(/[[:space:]]+/, ' ').strip
-  end
-end
 
 PARTIES = {
   'Conservative'             => 'conservative',
