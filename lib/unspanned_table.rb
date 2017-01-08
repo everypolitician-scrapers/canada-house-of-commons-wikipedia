@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class UnspannedTable
   def initialize(noko_table)
     @original = noko_table
@@ -5,9 +6,9 @@ class UnspannedTable
 
   def transformed
     @transformed ||= Nokogiri.HTML(
-      "<table>" +
-        reparsed.map { |c| "<tr>" + c.map(&:to_html).join + "</tr>" }.join +
-      "</table>"
+      '<table>' +
+        reparsed.map { |c| '<tr>' + c.map(&:to_html).join + '</tr>' }.join +
+      '</table>'
     )
   end
 
@@ -20,7 +21,6 @@ class UnspannedTable
 
     original.css('tr').each_with_index do |row, curr_x|
       row.css('td, th').each_with_index do |cell, curr_y|
-
         rowspan = cell.remove_attribute('rowspan').value.to_i rescue 1
         colspan = cell.remove_attribute('colspan').value.to_i rescue 1
 

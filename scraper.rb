@@ -1,5 +1,6 @@
 #!/bin/env ruby
 # encoding: utf-8
+# frozen_string_literal: true
 
 require 'nokogiri'
 require 'pry'
@@ -12,21 +13,21 @@ require_relative 'lib/unspanned_table'
 
 class String
   def tidy
-    self.gsub(/[[:space:]]+/, ' ').strip
+    gsub(/[[:space:]]+/, ' ').strip
   end
 end
 
 PARTIES = {
-  "Conservative" => "conservative",
-  "Liberal" => "liberal",
-  "NDP" => "ndp",
-  "Bloc Québécois" => "bloc_québécois",
-  "Green" => "green_party",
-  "FD" => "forces_et_démocratie",
-  "Independent" => "independent",
-  "Independent Conservative" => "independent_conservative",
-  "Strength in Democracy" => "strength_in_democracy",
-}
+  'Conservative'             => 'conservative',
+  'Liberal'                  => 'liberal',
+  'NDP'                      => 'ndp',
+  'Bloc Québécois'           => 'bloc_québécois',
+  'Green'                    => 'green_party',
+  'FD'                       => 'forces_et_démocratie',
+  'Independent'              => 'independent',
+  'Independent Conservative' => 'independent_conservative',
+  'Strength in Democracy'    => 'strength_in_democracy',
+}.freeze
 
 def noko_for(url)
   Nokogiri::HTML(open(URI.escape(URI.unescape(url))).read)
@@ -53,14 +54,14 @@ def scrape_term(id, url)
       district = tds[3].text.tidy
 
       data = {
-        name: tds[1].at_css('a').text,
+        name:     tds[1].at_css('a').text,
         wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
-        party: tds[2].children.map(&:text).map(&:tidy).reject(&:empty?).first,
-        state: state,
+        party:    tds[2].children.map(&:text).map(&:tidy).reject(&:empty?).first,
+        state:    state,
         district: district,
-        area: "%s (%s)" % [state, district],
-        term: id,
-        source: url,
+        area:     '%s (%s)' % [state, district],
+        term:     id,
+        source:   url,
       }
       data[:party_id] = PARTIES[data[:party]] || raise("No such party: #{data[:party]}")
 
@@ -71,7 +72,7 @@ def scrape_term(id, url)
         data[:end_date] = date_from(matched.captures.first)
       end
 
-      ScraperWiki.save_sqlite([:wikiname, :term], data)
+      ScraperWiki.save_sqlite(%i(wikiname term), data)
     end
   end
 end
@@ -85,4 +86,3 @@ ScraperWiki.sqliteexecute('DELETE FROM data') rescue nil
 terms.each do |id, url|
   scrape_term(id, url)
 end
-
