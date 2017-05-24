@@ -48,7 +48,7 @@ def scrape_term(id, url)
       data = {
         name:     tds[1].at_css('a').text,
         wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
-        party:    tds[2].children.map(&:text).map(&:tidy).reject(&:empty?).first,
+        party:    tds[2].children.map(&:text).map { |t| t.gsub(/\(.*\)/,'') }.map(&:tidy).reject(&:empty?).first,
         state:    state,
         district: district,
         area:     '%s (%s)' % [state, district],
@@ -57,10 +57,11 @@ def scrape_term(id, url)
       }
       data[:party_id] = PARTIES[data[:party]] || raise("No such party: #{data[:party]}")
 
-      if matched = tds[1].text.match(/until (.*)/)
+      if matched = tds[0].text.match(/until (.*)/) || tds[1].text.match(/until (.*)/) || tds[2].text.match(/until (.*)/)
         data[:start_date] = date_from(matched.captures.first)
       end
-      if matched = tds[1].text.match(/after (.*)/)
+
+      if matched = tds[0].text.match(/until (.*)/) || tds[1].text.match(/until (.*)/) || tds[2].text.match(/until (.*)/)
         data[:end_date] = date_from(matched.captures.first)
       end
 
