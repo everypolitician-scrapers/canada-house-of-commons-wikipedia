@@ -64,7 +64,7 @@ def scrape_term(id, url)
         data[:end_date] = date_from(matched.captures.first)
       end
 
-      # puts data
+      puts data.reject { |_, v| v.to_s.empty? }.sort_by { |k, _| k }.to_h if ENV['MORPH_DEBUG']
       ScraperWiki.save_sqlite(%i(wikiname term), data)
     end
   end
