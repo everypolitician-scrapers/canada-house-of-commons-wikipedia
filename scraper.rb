@@ -57,12 +57,14 @@ def scrape_term(id, url)
       }
       data[:party_id] = PARTIES[data[:party]] || raise("No such party: #{data[:party]}")
 
-      if matched = tds[0].text.match(/until (.*)/) || tds[1].text.match(/until (.*)/) || tds[2].text.match(/until (.*)/)
-        data[:start_date] = date_from(matched.captures.first)
-      end
+      tds[0..2].each do |td|
+        if matched = td.text.match(/since (.*)/) || td.text.match(/after (.*)/)
+          data[:start_date] = date_from(matched.captures.first)
+        end
 
-      if matched = tds[0].text.match(/until (.*)/) || tds[1].text.match(/until (.*)/) || tds[2].text.match(/until (.*)/)
-        data[:end_date] = date_from(matched.captures.first)
+        if matched = td.text.match(/until (.*)/)
+          data[:end_date] = date_from(matched.captures.first)
+        end
       end
 
       puts data.reject { |_, v| v.to_s.empty? }.sort_by { |k, _| k }.to_h if ENV['MORPH_DEBUG']
