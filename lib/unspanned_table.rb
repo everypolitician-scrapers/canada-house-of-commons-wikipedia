@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 class UnspannedTable
   def initialize(noko_table)
     @original = noko_table

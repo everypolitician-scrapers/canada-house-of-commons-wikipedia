@@ -48,7 +48,7 @@ def scrape_term(id, url)
       data = {
         name:     tds[1].at_css('a').text,
         wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
-        party:    tds[2].children.map(&:text).map { |t| t.gsub(/\(.*\)/,'') }.map(&:tidy).reject(&:empty?).first,
+        party:    tds[2].children.map(&:text).map { |t| t.gsub(/\(.*\)/, '') }.map(&:tidy).reject(&:empty?).first,
         state:    state,
         district: district,
         area:     '%s (%s)' % [state, district],
@@ -68,7 +68,7 @@ def scrape_term(id, url)
       end
 
       puts data.reject { |_, v| v.to_s.empty? }.sort_by { |k, _| k }.to_h if ENV['MORPH_DEBUG']
-      ScraperWiki.save_sqlite(%i(wikiname term), data)
+      ScraperWiki.save_sqlite(%i[wikiname term], data)
     end
   end
 end
