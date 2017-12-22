@@ -61,6 +61,15 @@ class MemberRow < Scraped::HTML
     tds[2].text.tidy
   end
 
+  field :party_id do
+    PARTIES[party] || raise("No such party: #{party}")
+  end
+
+  # Not all entries are links, so find one that is
+  field :party_wikidata do
+    noko.xpath('..//tr/td[3]//a[@wikidata]').find { |a| a.text == party }&.attr('wikidata')
+  end
+
   field :district do
     district
   end
@@ -87,10 +96,6 @@ class MemberRow < Scraped::HTML
 
   field :source do
     url
-  end
-
-  field :party_id do
-    PARTIES[party] || raise("No such party: #{party}")
   end
 
   field :start_date do
