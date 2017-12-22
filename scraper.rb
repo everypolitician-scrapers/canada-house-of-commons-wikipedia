@@ -71,6 +71,10 @@ class MemberRow < Scraped::HTML
     tds[3].text.tidy
   end
 
+  field :district_id do
+    tds[3].css('a/@wikidata').text
+  end
+
   field :area do
     '%s (%s)' % [state, district]
   end
