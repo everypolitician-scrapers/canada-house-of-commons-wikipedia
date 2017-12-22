@@ -4,6 +4,7 @@
 require 'pry'
 require 'scraped'
 require 'scraperwiki'
+require 'wikidata_ids_decorator'
 
 require_relative 'lib/unspan_all_tables'
 
@@ -24,6 +25,7 @@ PARTIES = {
 
 class MembersPage < Scraped::HTML
   decorator UnspanAllTables
+  decorator WikidataIdsDecorator::Links
 
   field :members do
     members_tables.xpath('.//tr[td]').map { |tr| fragment(tr => MemberRow) }.reject(&:vacant?)
@@ -43,6 +45,10 @@ class MemberRow < Scraped::HTML
 
   field :name do
     tds[1].at_css('a').text unless vacant?
+  end
+
+  field :id do
+    tds[1].css('a/@wikidata').text
   end
 
   field :wikiname do
