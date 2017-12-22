@@ -6,6 +6,7 @@ require 'scraped'
 require 'scraperwiki'
 require 'wikidata_ids_decorator'
 
+require_relative 'lib/remove_notes'
 require_relative 'lib/unspan_all_tables'
 
 require 'open-uri/cached'
@@ -24,8 +25,9 @@ PARTIES = {
 }.freeze
 
 class MembersPage < Scraped::HTML
-  decorator UnspanAllTables
+  decorator RemoveNotes
   decorator WikidataIdsDecorator::Links
+  decorator UnspanAllTables
 
   field :members do
     members_tables.xpath('.//tr[td]').map { |tr| fragment(tr => MemberRow) }.reject(&:vacant?)
@@ -56,7 +58,7 @@ class MemberRow < Scraped::HTML
   end
 
   field :party do
-    tds[2].children.map(&:text).map { |t| t.gsub(/\(.*\)/, '') }.map(&:tidy).reject(&:empty?).first
+    tds[2].text.tidy
   end
 
   field :district do
@@ -78,6 +80,7 @@ class MemberRow < Scraped::HTML
   field :area do
     '%s (%s)' % [state, district]
   end
+
   field :term do
     url[/members_of_the_(\d+)[snrt][tdh]_Parliament/, 1]
   end
