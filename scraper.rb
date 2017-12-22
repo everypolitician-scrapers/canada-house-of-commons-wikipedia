@@ -1,15 +1,14 @@
 #!/bin/env ruby
-# encoding: utf-8
 # frozen_string_literal: true
 
 require 'pry'
 require 'scraped'
 require 'scraperwiki'
 
+require_relative 'lib/unspan_all_tables'
+
 require 'open-uri/cached'
 OpenURI::Cache.cache_path = '.cache'
-
-require_relative 'lib/unspanned_table'
 
 PARTIES = {
   'Conservative'             => 'conservative',
@@ -23,62 +22,101 @@ PARTIES = {
   'Strength in Democracy'    => 'strength_in_democracy',
 }.freeze
 
-def noko_for(url)
-  Nokogiri::HTML(open(URI.escape(URI.unescape(url))).read)
-end
+class MembersPage < Scraped::HTML
+  decorator UnspanAllTables
 
-def date_from(str)
-  return if str.to_s.empty?
-  Date.parse(str).to_s rescue nil
-end
+  field :members do
+    members_tables.xpath('.//tr[td]').map { |tr| fragment(tr => MemberRow) }.reject(&:vacant?)
+  end
 
-def scrape_term(id, url)
-  noko = noko_for(url)
+  private
 
-  noko.xpath('//table[.//tr[th[.="Electoral district"]]]').each do |table|
-    unspanned = UnspannedTable.new(table).transformed
-
-    unspanned.xpath('.//tr[td]').each do |tr|
-      tds = tr.css('td')
-      next if tds[1].text == 'Vacant'
-
-      state = table.xpath('preceding::h3/span[@class="mw-headline"]').last.text
-      district = tds[3].text.tidy
-
-      data = {
-        name:     tds[1].at_css('a').text,
-        wikiname: tds[1].xpath('.//a[not(@class="new")]/@title').text,
-        party:    tds[2].children.map(&:text).map { |t| t.gsub(/\(.*\)/, '') }.map(&:tidy).reject(&:empty?).first,
-        state:    state,
-        district: district,
-        area:     '%s (%s)' % [state, district],
-        term:     id,
-        source:   url,
-      }
-      data[:party_id] = PARTIES[data[:party]] || raise("No such party: #{data[:party]}")
-
-      tds[0..2].each do |td|
-        if matched = td.text.match(/since (.*)/) || td.text.match(/after (.*)/)
-          data[:start_date] = date_from(matched.captures.first)
-        end
-
-        if matched = td.text.match(/until (.*)/)
-          data[:end_date] = date_from(matched.captures.first)
-        end
-      end
-
-      puts data.reject { |_, v| v.to_s.empty? }.sort_by { |k, _| k }.to_h if ENV['MORPH_DEBUG']
-      ScraperWiki.save_sqlite(%i[wikiname term], data)
-    end
+  def members_tables
+    noko.xpath('//table[.//tr[th[.="Electoral district"]]]')
   end
 end
 
-terms = {
-  '42' => 'https://en.wikipedia.org/wiki/List_of_House_members_of_the_42nd_Parliament_of_Canada',
-  '41' => 'https://en.wikipedia.org/wiki/List_of_House_members_of_the_41st_Parliament_of_Canada',
-}
+class MemberRow < Scraped::HTML
+  def vacant?
+    tds[1].text == 'Vacant'
+  end
+
+  field :name do
+    tds[1].at_css('a').text unless vacant?
+  end
+
+  field :wikiname do
+    tds[1].xpath('.//a[not(@class="new")]/@title').text
+  end
+
+  field :party do
+    tds[2].children.map(&:text).map { |t| t.gsub(/\(.*\)/, '') }.map(&:tidy).reject(&:empty?).first
+  end
+
+  field :district do
+    district
+  end
+
+  field :state do
+    noko.xpath('preceding::h3/span[@class="mw-headline"]').last.text
+  end
+
+  field :district do
+    tds[3].text.tidy
+  end
+
+  field :area do
+    '%s (%s)' % [state, district]
+  end
+  field :term do
+    url[/members_of_the_(\d+)[snrt][tdh]_Parliament/, 1]
+  end
+
+  field :source do
+    url
+  end
+
+  field :party_id do
+    PARTIES[party] || raise("No such party: #{party}")
+  end
+
+  field :start_date do
+    tds[0..2].map do |td|
+      if matched = td.text.match(/since (.*)/) || td.text.match(/after (.*)/)
+        date_from(matched.captures.first)
+      end
+    end.compact.first
+  end
+
+  field :end_date do
+    tds[0..2].map do |td|
+      if matched = td.text.match(/until (.*)/)
+        date_from(matched.captures.first)
+      end
+    end.compact.first
+  end
+
+  private
+
+  def tds
+    noko.css('td')
+  end
+
+  def date_from(str)
+    return if str.to_s.empty?
+    Date.parse(str).to_s rescue nil
+  end
+end
+
+terms = [
+  'https://en.wikipedia.org/wiki/List_of_House_members_of_the_42nd_Parliament_of_Canada',
+  'https://en.wikipedia.org/wiki/List_of_House_members_of_the_41st_Parliament_of_Canada',
+]
 
 ScraperWiki.sqliteexecute('DROP TABLE data') rescue nil
-terms.each do |id, url|
-  scrape_term(id, url)
+terms.each do |url|
+  page = MembersPage.new(response: Scraped::Request.new(url: url).response)
+  data = page.members.map(&:to_h)
+  data.each { |mem| puts mem.reject { |_, v| v.to_s.empty? }.sort_by { |k, _| k }.to_h } if ENV['MORPH_DEBUG']
+  ScraperWiki.save_sqlite(%i[wikiname term], data)
 end
