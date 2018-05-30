@@ -22,6 +22,7 @@ PARTIES = {
   'Independent'              => 'independent',
   'Independent Conservative' => 'independent_conservative',
   'Strength in Democracy'    => 'strength_in_democracy',
+  'Québec Debout'            => 'quebec_debout',
 }.freeze
 
 class MembersPage < Scraped::HTML
