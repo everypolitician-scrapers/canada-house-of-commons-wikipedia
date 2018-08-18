@@ -38,17 +38,17 @@ class MembersPage < Scraped::HTML
   private
 
   def members_tables
-    noko.xpath('//table[.//tr[th[.="Electoral district"]]]')
+    noko.xpath('//table[.//tr[th[contains(.,"Electoral district")]]]')
   end
 end
 
 class MemberRow < Scraped::HTML
   def vacant?
-    tds[1].text == 'Vacant'
+    tds[1].text.tidy == 'Vacant'
   end
 
   field :name do
-    tds[1].at_css('a').text unless vacant?
+    tds[1].at_css('a').text.tidy unless vacant?
   end
 
   field :id do
