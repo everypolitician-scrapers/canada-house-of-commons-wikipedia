@@ -24,6 +24,7 @@ PARTIES = {
   'Strength in Democracy'    => 'strength_in_democracy',
   'Québec Debout'            => 'quebec_debout',
   'CCF'                      => 'ccf',
+  'People\'s'                => 'peoples',
 }.freeze
 
 class MembersPage < Scraped::HTML
